@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-// const jwt = require('jsonwebtoken');
-// const cookieParser = require('cookie-parser')
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
 const {MongoClient,ServerApiVersion,ObjectId} = require('mongodb')
 require('dotenv').config()
 const app = express();
@@ -9,15 +9,15 @@ const port = process.env.PORT || 13000;
 
 //middleware
 app.use(cors(
-//   {
-//   origin:
-//     ['http://localhost:5173'],
-//     credentials:true
+  {
+  origin:
+    ['http://localhost:5173'],
+    credentials:true
   
-// }
+}
 ));
 app.use(express.json());
-// app.use(cookieParser());
+app.use(cookieParser());
 
 
 
@@ -75,20 +75,26 @@ async function run() {
 
 
     //auth related api
-// app.post('/jwt',logger, async(req,res) =>{
-//   const user = req.body;
-//   console.log(user);
-//   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET,{expiresIn: '70'})
+app.post('/jwt'
+  // ,logger
+  , async(req,res) =>{
+  
+  const user = req.body;
+  console.log(user);
+  const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET,
+     {expiresIn: '1h'})
 
-//   res.cookie('token', token,{
-//     httpOnly:true,
-//     secure: true,
-//      //http://localhost:5173,
-//     sameSite: 'none'
-//   })
-//   .send({success: true});
+  res.cookie('token', token,{
+    httpOnly:true,
+    secure: false,
+    // true,
+     //http://localhost:5173,
+    // sameSite: 'none'
+  })
+  .send({success: true});
+// res.send(token)
 
-// })
+})
 
 // app.post('/logout', async(req,res)=>{
 //   const user =req.body;
@@ -123,6 +129,7 @@ async function run() {
       // logger,verifyToken,
        async(req, res) =>{
       console.log(req.query.email);
+      console.log('tok tok token',req.cookies.token)
       // console.log('tttt token',req.cookies.token)
       // console.log('user in the valid token',req.user)
       // console.log('cook cookies',req.cookies)
