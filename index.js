@@ -37,32 +37,34 @@ const client = new MongoClient(uri, {
 
 //middlewares
 
-// const logger = async (req,res,next) =>{
-//   // console.log('called:', req.host, req.originalUrl)
-//   console.log('log: info', req.method, req.url)
-//   next()
-// }
+const logger = async (req,res,next) =>{
+  console.log('called:', req.host, req.originalUrl)
+  // console.log('log: info', req.method, req.url)
+  next()
+}
 
-// const verifyToken = async(req,res,next) =>{
-//   const token = req.cookie?.token;
-//   console.log('value of token in middleware', token)
-//   if(!token) {
-//     return res.status(401).send({message: 'not authorized'})
-//   }
-//    jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err,decoded)=>{
-//     //error
-//     if(err){
-//       console.log(err)
-//       return res.status(401).send({message: 'unauthorized'})
+const verifyToken = async(req,res,next) =>{
+  const token = req.cookies?.token;
+  console.log('value of token in middleware', token)
+  if(!token) {
+    return res.status(401).send({message: 'not authorized'})
+  }
+
+   jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err,decoded)=>{
+    // error
+    if(err){
+      console.log(err)
+      return res.status(401).send({message: 'unauthorized'})
       
-//     }
-//     //if token is valid then it would be decoded
-//     console.log('value in the token', decoded)
-//     req.user = decoded;
-//     next()
-//    })
+    }
+    
+    // if token is valid then it would be decoded
+    console.log('value in the token', decoded)
+    req.user = decoded;
+    next()
+   })
   
-// }
+}
 
 async function run() {
   try {
@@ -76,7 +78,7 @@ async function run() {
 
     //auth related api
 app.post('/jwt'
-  // ,logger
+  ,logger
   , async(req,res) =>{
   
   const user = req.body;
@@ -106,7 +108,7 @@ app.post('/jwt'
 //services related api
 
     app.get('/server',
-      // logger,
+      logger,
       async(req,res) =>{
       const cursor = serviceCollection.find();
       const result = await cursor.toArray();
@@ -125,17 +127,18 @@ app.post('/jwt'
 
     //bookings
 
-    app.get('/bookings',
-      // logger,verifyToken,
-       async(req, res) =>{
+    app.get('/bookings',logger, verifyToken , async(req, res) =>{
+     
+     
+      
       console.log(req.query.email);
       console.log('tok tok token',req.cookies.token)
       // console.log('tttt token',req.cookies.token)
-      // console.log('user in the valid token',req.user)
+      console.log('user in the valid token',req.user)
       // console.log('cook cookies',req.cookies)
-      // if(req.user.email !== req.query.email){
-      //   return res.status(403).send({message: 'forbidden access'})
-      // }
+      if(req.user.email !== req.query.email){
+        return res.status(403).send({message: 'forbidden access'})
+      }
       let query = {};
       if (req.query?.email){
         query = { email:req.query.email}
