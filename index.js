@@ -11,7 +11,10 @@ const port = process.env.PORT || 13000;
 app.use(cors(
   {
   origin:
-    ['http://localhost:5173'],
+    ['http://localhost:5173',
+      // "https://car-doctor-client-51c26.web.app",
+      // "https://car-doctor-client-51c26.firebaseapp.com"
+    ],
     credentials:true
   
 }
@@ -65,11 +68,17 @@ const verifyToken = async(req,res,next) =>{
    })
   
 }
+const cookeOption ={
+  httpOnly:true,
+  sameSite:process.env.NODE_ENV === "production"?"none" :'strict',
+  secure: process.env.NODE_ENV === "production"? true :false,
+    
+}
 
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const serviceCollection = client.db('carDoctor').collection('server');
 
@@ -86,23 +95,25 @@ app.post('/jwt'
   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET,
      {expiresIn: '1h'})
 
-  res.cookie('token', token,{
-    httpOnly:true,
-    secure: false,
-    // true,
-     //http://localhost:5173,
-    // sameSite: 'none'
-  })
+  res.cookie('token', token,cookeOption
+  //   {
+  //   httpOnly:true,
+  //   secure: true,
+  //   // true,
+  //    //http://localhost:5173,
+  //   sameSite: 'none'
+  // }
+)
   .send({success: true});
 // res.send(token)
 
 })
 
-// app.post('/logout', async(req,res)=>{
-//   const user =req.body;
-//   console.log('logging out',user)
-//   res.clearCookie('token',{maxAge:0}).send({success:true})
-// })
+app.post('/logout', async(req,res)=>{
+  const user =req.body;
+  console.log('logging out',user)
+  res.clearCookie('token',{...cookeOption,maxAge:0}).send({success:true})
+})
 
 
 //services related api
@@ -110,7 +121,21 @@ app.post('/jwt'
     app.get('/server',
       logger,
       async(req,res) =>{
-      const cursor = serviceCollection.find();
+      const filter = req.query;
+      console.log(filter)
+      const query = {
+      // price:{$lte:100},
+      // { price: { $gt: 50 } }
+      title: {$regex: filter.search, $options:'i'}}
+
+      const options = {
+        sort:{
+          price:filter.sort === 'asc' ? 1: -1
+        }
+      }
+      
+
+      const cursor = serviceCollection.find(query,options)
       const result = await cursor.toArray();
       res.send(result);
     })
@@ -183,7 +208,7 @@ app.post('/jwt'
     })
     
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
@@ -201,3 +226,8 @@ app.get('/',(req,res) =>{
 app.listen(port, () =>{
       console.log(`server is running on port:${port}`)
 })
+
+
+
+//https://car-doctor-client-51c26.web.app/
+//https://car-doctor-client-51c26.firebaseapp.com/
